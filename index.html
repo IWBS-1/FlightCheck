@@ -3,8 +3,33 @@
 <meta name="theme-color" content="#ffffff"><title>FlightCheck | Aviation Checklists</title>
 <style>
 :root{font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;color:#142538;background:#f4f7fa}*{box-sizing:border-box}body{margin:0}button,input,select,textarea{font:inherit}button{cursor:pointer}button:disabled{opacity:.45;cursor:not-allowed}.app{max-width:520px;margin:auto;min-height:100vh;background:#fff;padding:20px 18px 100px}.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:23px}.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px}.mark{background:#123550;color:white;border-radius:15px;padding:11px}.muted{color:#69798c;font-size:13px}.card{border:1px solid #e1e8f0;border-radius:20px;padding:17px;margin:12px 0;background:white;box-shadow:0 6px 26px #14253806}.cards{display:grid;grid-template-columns:1fr 1fr;gap:10px}.metric{background:#f5f8fb;border-radius:16px;padding:15px}.metric b{font-size:27px;display:block;line-height:1.35}.metric small{font-size:12px;color:#728294}.metric span{font-size:12px;color:#728294}.btn{background:#153e60;color:white;border:0;border-radius:13px;padding:12px 15px;font-weight:650}.btn.alt{background:#edf3f7;color:#153e60}.btn.danger{background:#fff1f1;color:#a82331}.btn.sm{font-size:12px;padding:9px}.stack{display:flex;gap:8px;flex-wrap:wrap}.full{width:100%}.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(520px,100%);padding:11px 10px max(12px,env(safe-area-inset-bottom));background:#fff;border-top:1px solid #e1e7ed;display:flex;justify-content:space-around;z-index:4}.nav button{border:0;background:none;color:#69798c;padding:8px 11px;border-radius:12px;font-size:12px;font-weight:700}.nav button.active{background:#e9f1f7;color:#153e60}h1{font-size:26px;letter-spacing:-.8px;margin:8px 0}h2{font-size:19px;margin:0 0 10px}p{line-height:1.5}.topline{display:flex;justify-content:space-between;align-items:center;gap:10px}.tag{font-size:11px;font-weight:700;padding:6px 9px;border-radius:20px;background:#eef3f7;color:#345}.tag.locked{background:#e5f4e8;color:#176c38}.bar{height:8px;background:#e6edf2;border-radius:20px;overflow:hidden}.fill{height:100%;background:#153e60}.check{display:flex;gap:13px;align-items:center;padding:13px 0;border-bottom:1px solid #ebeff2}.check input{width:24px;height:24px;accent-color:#153e60}.check span{flex:1}.panel{background:#f6f9fb;padding:14px;border-radius:15px}.hidden{display:none!important}input[type=text],input[type=email],input[type=password],input[type=number],select,textarea{width:100%;padding:12px;border:1px solid #d7e0e8;border-radius:12px;background:#fff;margin:5px 0 12px}label{display:block;font-size:12px;font-weight:700;color:#52647a}.hint{background:#fff9e8;padding:12px;border-radius:12px;border:1px solid #f3e7c0;font-size:12px;color:#6c5d25}.fade{animation:rise .25s ease-out}@keyframes rise{from{opacity:.1;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}a{color:#145481}
+</style><style>
+#authGate{position:fixed;inset:0;z-index:100;background:linear-gradient(160deg,#f1f6fa,#fff 45%);display:flex;align-items:center;justify-content:center;padding:18px;overflow:auto}
+#authGate[hidden]{display:none}
+.authPanel{max-width:400px;width:100%;background:#fff;border:1px solid #e1e9f0;border-radius:26px;box-shadow:0 25px 80px #133b5c17;padding:30px 24px}
+.authPanel h1{font-size:28px;margin:12px 0 8px}
+.authPanel input{margin:5px 0 12px}
+.authPanel button{width:100%;margin:4px 0}
+#authMessage{min-height:24px;color:#9b3545;font-size:13px;line-height:1.5;white-space:pre-wrap}
+#accountArea{position:fixed;z-index:20;right:max(12px,calc((100vw - 520px)/2 + 16px));top:68px;background:#fff;border-radius:12px;box-shadow:0 4px 30px #102e4a22;border:1px solid #dee6ed;padding:12px;max-width:290px;display:none}
+#accountArea.show{display:block}
 </style></head><body><div class="app">
 <header class="header"><div class="logo"><div class="mark">✈</div> FlightCheck</div><button class="btn alt sm" id="lockBtn">🔒 Lock</button></header>
+<div id="accountArea"><p id="accountEmail" class="muted"></p><p id="syncStatus" class="muted"></p><button class="btn alt sm" id="signOutBtn">Sign out</button></div>
+<div id="authGate"><div class="authPanel">
+<div class="mark" style="display:inline-block">✈</div>
+<div class="muted" style="margin-top:15px">WELCOME TO FLIGHTCHECK</div>
+<h1 id="authTitle">Sign in</h1>
+<p class="muted">Your aviation checklists, saved privately to your account.</p>
+<form id="authForm">
+<label>Email address</label><input type="email" id="authEmail" autocomplete="email" required placeholder="you@example.com">
+<label id="passwordLabel">Password</label><input type="password" id="authPassword" autocomplete="current-password" minlength="6" required placeholder="At least 6 characters">
+<button class="btn" id="authSubmit" type="submit">Sign in</button>
+</form>
+<p id="authMessage"></p>
+<button class="btn alt" id="authModeBtn" type="button">Create an account</button>
+<button class="btn alt" id="forgotBtn" type="button">Forgot password?</button>
+</div></div>
 <main id="main" class="fade"></main>
 <nav class="nav"><button data-tab="home">⌂<br>Home</button><button data-tab="checks">☑<br>Checks</button><button data-tab="performance">◉<br>Performance</button><button data-tab="manage">☷<br>Manage</button></nav></div>
 <script>
@@ -12,7 +37,7 @@ const STORE='flightcheck-pages-v1';
 const ka={id:'ka6cr',name:'Schleicher KA 6 CR',reg:'',archived:false,verified:false,phases:[{name:'Preflight',cue:'AIRFRAME',items:['Documents and maintenance status','Rigging and secure connections','Wings, tail and controls','Tyre and airbrakes']},{name:'Cockpit / Before launch',cue:'CBSIFTBEC',items:['Controls full and free','Ballast and weight assessed','Straps secure','Instruments checked','Flaps if fitted','Trim checked','Brakes operated, closed and locked','Eventualities and launch-failure plan','Canopy closed and locked']},{name:'Tow / Launch',cue:'CONTROL · LOOKOUT',items:['Launch conditions considered','Approved launch procedures reviewed']},{name:'Free flight',cue:'LOOK · SPEED · HEIGHT',items:['Lookout maintained','Airspeed and height monitored','Landing options reviewed']},{name:'Circuit',cue:'WIND · HEIGHT · TRAFFIC',items:['Wind and landing area checked','Traffic and circuit plan considered']},{name:'Approach / Landing',cue:'SPEED · PATH',items:['Approach speed reviewed','Approach and airbrakes managed under approved procedures']},{name:'Post-flight',cue:'SECURE · RECORD',items:['Airframe condition checked','Defects recorded and reported']}]};
 let db;try{db=JSON.parse(localStorage.getItem(STORE))}catch(e){}if(!db||!Array.isArray(db.aircraft))db={aircraft:[ka],selected:'ka6cr',locked:false,tab:'home',phase:0,unit:'kt',ticks:{},sessions:[]};
 if(!db.aircraft.length)db.aircraft=[ka];if(!db.aircraft.find(x=>x.id===db.selected))db.selected=db.aircraft[0].id;
-const $=x=>document.getElementById(x),save=()=>localStorage.setItem(STORE,JSON.stringify(db)),a=()=>db.aircraft.find(x=>x.id===db.selected),safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),key=(i,j)=>db.selected+':'+i+':'+j;
+const $=x=>document.getElementById(x),save=()=>{localStorage.setItem(STORE,JSON.stringify(db));window.queueCloudSave?.(db)},a=()=>db.aircraft.find(x=>x.id===db.selected),safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),key=(i,j)=>db.selected+':'+i+':'+j;
 const figures=[['Landing approach',45,50,'Handbook approximate approach'],['Stall reference',31,null,'At 570 lb all-up; EAS'],['Best glide',43,null,'Calculated EAS'],['Minimum sink',37,null,'Calculated EAS'],['Winch / auto-tow MAX',55,null,'Limit, not takeoff target'],['Aerotow MAX',75,null,'Limit, not takeoff target'],['Rough air MAX',75,null,'Speed limit'],['Calm air MAX',110,null,'Speed limit']];
 const fmt=n=>db.unit==='kt'?n:Math.round(n*1.852),units=()=>db.unit==='kt'?'kt':'km/h';
 function render(){save();let craft=a(),m=$('main');$('lockBtn').textContent=db.locked?'🔒 Locked':'🔓 Lock';document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===db.tab));
@@ -32,5 +57,35 @@ function remove(id){if(db.locked)return;if(db.aircraft.length===1){alert('Keep a
 function finish(){db.sessions.push({date:new Date().toISOString(),aircraft:a().name,registration:a().reg,ticks:{...db.ticks}});save();alert('Checklist snapshot saved locally. This is not an aircraft release.')}
 function exportData(){let blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),el=document.createElement('a');el.href=url;el.download='flightcheck-backup.json';el.click();setTimeout(()=>URL.revokeObjectURL(url),500)}
 function speak(){if(a().id!=='ka6cr'||!('speechSynthesis' in window)){alert('Voice reading unavailable for this profile/device');return}speechSynthesis.cancel();let tx='Schleicher K A 6 C R. '+figures.map(f=>f[0]+': '+fmt(f[1])+(f[2]?' to '+fmt(f[2]):'')+' '+(db.unit==='kt'?'knots':'kilometres per hour')+'. '+f[3]+'.').join(' ')+' Maximum all up weight: '+(db.unit==='kt'?'660 pounds':'299 kilograms')+'. Reference only. Verify your aircraft documentation.';let u=new SpeechSynthesisUtterance(tx);u.rate=.86;u.lang='en-GB';speechSynthesis.speak(u)}
-$('lockBtn').onclick=toggleLock;document.querySelectorAll('[data-tab]').forEach(x=>x.onclick=()=>go(x.dataset.tab));render();
+$('lockBtn').onclick=toggleLock;document.querySelector('.logo').onclick=()=>document.getElementById('accountArea').classList.toggle('show');document.querySelector('.logo').style.cursor='pointer';document.querySelectorAll('[data-tab]').forEach(x=>x.onclick=()=>go(x.dataset.tab));render();
+</script><script>
+(()=>{'use strict';
+const api='https://hqlfifshojrcshxmjrks.supabase.co';
+const key='sb_publishable_JViNo9AGByHkbk-tbj0eMQ_RzdtMZd-';
+const site=location.origin+location.pathname;
+const $=id=>document.getElementById(id);
+const storageKey='flightcheck-supabase-session';
+let session=null,mode='login',saving=false,pending=null,saveTimer=null,hydrating=true;
+const headers=()=>({'apikey':key,'Content-Type':'application/json','Authorization':'Bearer '+(session?.access_token||key)});
+const message=(t,ok=false)=>{$('authMessage').textContent=t;$('authMessage').style.color=ok?'#167342':'#9b3545'};
+function updateMode(next){mode=next;$('authTitle').textContent=next==='signup'?'Create account':next==='reset'?'Set new password':'Sign in';$('passwordLabel').style.display=next==='recover'?'none':'block';$('authPassword').style.display=next==='recover'?'none':'block';$('authPassword').required=next!=='recover';$('authSubmit').textContent=next==='signup'?'Sign up':next==='recover'?'Send reset email':next==='reset'?'Update password':'Sign in';$('authModeBtn').textContent=next==='login'?'Create an account':'Back to sign in';$('forgotBtn').style.display=next==='login'?'block':'none';message('')}
+function show(){hydrating=true;$('authGate').hidden=false;$('accountArea').classList.remove('show')}
+function hide(){hydrating=false;$('authGate').hidden=true;$('accountEmail').textContent=session?.user?.email||'Signed in';$('syncStatus').textContent='Cloud sync enabled'}
+async function request(path,options={}){const res=await fetch(api+path,{...options,headers:{...headers(),...(options.headers||{})}});const body=await res.json().catch(()=>({}));if(!res.ok)throw Error(body.msg||body.error_description||body.message||'Service error '+res.status);return body}
+async function refresh(){if(!session?.refresh_token)return false;try{let s=await request('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:JSON.stringify({refresh_token:session.refresh_token})});session=s;localStorage.setItem(storageKey,JSON.stringify(s));return true}catch(e){return false}}
+async function authed(path,opts){try{return await request(path,opts)}catch(e){if(/401|jwt|token/i.test(e.message)&&await refresh())return request(path,opts);throw e}}
+async function loadCloud(){let rows=await authed('/rest/v1/flightcheck_data?select=state&user_id=eq.'+encodeURIComponent(session.user.id));if(rows.length&&rows[0].state&&Array.isArray(rows[0].state.aircraft)){db=rows[0].state;if(!db.aircraft?.length){db.aircraft=[]}if(!db.aircraft.length){db.aircraft=[ka];db.selected=ka.id}db.tab='home';db.phase=0;localStorage.setItem(STORE,JSON.stringify(db));render()}else{await cloudSave(db)}}
+async function cloudSave(data){if(!session||hydrating)return;const payload={user_id:session.user.id,state:data,updated_at:new Date().toISOString()};await authed('/rest/v1/flightcheck_data?on_conflict=user_id',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(payload)})}
+window.queueCloudSave=state=>{if(!session||hydrating)return;pending=JSON.parse(JSON.stringify(state));clearTimeout(saveTimer);saveTimer=setTimeout(async()=>{if(saving)return;saving=true;while(pending){let snap=pending;pending=null;try{await cloudSave(snap);$('syncStatus').textContent='Saved to cloud'}catch(e){$('syncStatus').textContent='Sync failed: '+e.message;pending=snap;break}}saving=false},750)};
+async function authenticated(s){session=s;localStorage.setItem(storageKey,JSON.stringify(s));try{await loadCloud();hide()}catch(e){show();message('Cannot load your private account data: '+e.message)}}
+$('authForm').addEventListener('submit',async e=>{e.preventDefault();const email=$('authEmail').value.trim(),password=$('authPassword').value;const btn=$('authSubmit');btn.disabled=true;message('Connecting securely…',true);try{if(mode==='recover'){await request('/auth/v1/recover',{method:'POST',body:JSON.stringify({email,redirect_to:site})});message('Check your email for the password reset link.',true)}
+else if(mode==='reset'){await request('/auth/v1/user',{method:'PUT',body:JSON.stringify({password})});updateMode('login');message('Password updated. Sign in again.',true)}
+else if(mode==='signup'){const data=await request('/auth/v1/signup',{method:'POST',body:JSON.stringify({email,password})});if(data.access_token)await authenticated(data);else message('Check your inbox to confirm your email, then sign in.',true)}
+else{const data=await request('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email,password})});await authenticated(data)}}catch(err){message(err.message)}finally{btn.disabled=false}});
+$('authModeBtn').onclick=()=>updateMode(mode==='login'?'signup':'login');
+$('forgotBtn').onclick=()=>updateMode('recover');
+$('signOutBtn').onclick=async()=>{if(!confirm('Sign out of FlightCheck on this device?'))return;clearTimeout(saveTimer);if(pending)try{await cloudSave(pending)}catch(e){}try{await request('/auth/v1/logout',{method:'POST'})}catch(e){}session=null;localStorage.removeItem(storageKey);localStorage.removeItem(STORE);db={aircraft:[JSON.parse(JSON.stringify(ka))],selected:'ka6cr',locked:false,tab:'home',phase:0,unit:'kt',ticks:{},sessions:[]};render();show();updateMode('login')};
+async function init(){show();try{session=JSON.parse(localStorage.getItem(storageKey)||'null')}catch(e){};const hash=new URLSearchParams(location.hash.substring(1));if(hash.has('access_token')){session={access_token:hash.get('access_token'),refresh_token:hash.get('refresh_token'),user:null};history.replaceState(null,'',location.pathname)}if(session){try{if(!session.user?.id){let u=await request('/auth/v1/user');session.user=u}if(await refresh()){await authenticated(session);return} }catch(e){} session=null;localStorage.removeItem(storageKey)}updateMode('login')}
+init();
+})();
 </script></body></html>
