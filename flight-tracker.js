@@ -1,0 +1,31 @@
+(()=>{'use strict';
+const E=id=>document.getElementById(id);
+let watch=null,map=null,route=null,marker=null,leafletReady=false,lastGood=0;
+const css=document.createElement('style');css.textContent='#flightTrackPanel{position:fixed;inset:0;background:#fff;z-index:70;display:none;overflow:auto;padding:18px 14px 90px;max-width:540px;margin:auto}#flightTrackPanel.open{display:block}#flightMap{height:52vh;min-height:290px;background:#e9f1f6;border-radius:17px;overflow:hidden}#flightTrackPanel .track-data{display:flex;justify-content:space-around;gap:8px;margin:12px 0}#flightTrackPanel .track-data div{padding:9px;border:1px solid #dee8f0;border-radius:12px;flex:1;font-size:13px}.track-warning{font-size:12px;color:#8a561c;background:#fff6e5;border-radius:12px;padding:12px;line-height:1.5}';document.head.appendChild(css);
+const panel=document.createElement('section');panel.id='flightTrackPanel';panel.innerHTML='<div class="topline"><div><div class="muted">FLIGHTCHECK GPS</div><h1>Live flight track</h1></div><button class="btn alt sm" id="trackClose">Close</button></div><div id="trackMessage" class="muted">Waiting for flight timer.</div><div class="track-data"><div>Fixes<b id="trackCount" style="display:block">0</b></div><div>GPS accuracy<b id="trackAccuracy" style="display:block">—</b></div><div>Last fix<b id="trackLast" style="display:block">—</b></div></div><div id="flightMap"></div><p class="track-warning">Reference/flight-review only. GPS accuracy, coverage, screen-lock behaviour and height may be unreliable. Never use this as a primary navigation aid, terrain clearance display, or collision-avoidance system. Keep your phone secure while flying.</p><button class="btn alt full" id="trackExport">Export track as GeoJSON</button>';document.body.appendChild(panel);
+E('trackClose').onclick=()=>panel.classList.remove('open');
+function points(){const t=db.timer;return t&&Array.isArray(t.track)?t.track:[]}
+function status(t){E('trackMessage').textContent=t}
+function update(){const pts=points();E('trackCount').textContent=String(pts.length);const p=pts[pts.length-1];E('trackAccuracy').textContent=p?Math.round(p.accuracy)+' m':'—';E('trackLast').textContent=p?new Date(p.time).toLocaleTimeString():'—';if(map&&window.L){route.setLatLngs(pts.map(x=>[x.lat,x.lon]));if(p){marker.setLatLng([p.lat,p.lon]);map.panTo([p.lat,p.lon],{animate:false})}}}
+function startWatching(){if(watch!==null||!db.timer)return;if(!navigator.geolocation){status('Geolocation unavailable in this browser.');return}
+status('Requesting GPS location…');watch=navigator.geolocation.watchPosition(pos=>{if(!db.timer)return;const x=pos.coords,now=Date.now();if(!Number.isFinite(x.latitude)||!Number.isFinite(x.longitude))return;
+if(x.accuracy>300){status('Poor GPS accuracy ('+Math.round(x.accuracy)+' m). Waiting for a better fix.');return}
+const p={lat:+x.latitude.toFixed(6),lon:+x.longitude.toFixed(6),accuracy:Math.round(x.accuracy),time:now};
+db.timer.track=db.timer.track||[];const prev=db.timer.track[db.timer.track.length-1];
+if(prev&&now-prev.time<2000)return;
+if(prev&&prev.lat===p.lat&&prev.lon===p.lon&&now-prev.time<12000)return;
+db.timer.track.push(p);if(db.timer.track.length>5000)db.timer.track.shift();
+if(now-lastGood>10000){lastGood=now;save()}else localStorage.setItem(STORE,JSON.stringify(db));
+status('Tracking • GPS recording active. Keep the app foregrounded for best results.');update()
+},e=>{status('GPS error: '+e.message+'. Check location permission and keep app visible.')},{enableHighAccuracy:true,maximumAge:3000,timeout:20000})}
+function stopWatching(){if(watch!==null){navigator.geolocation.clearWatch(watch);watch=null}status('Flight timer stopped. GPS recording paused.')}
+function setupMap(){if(map||!window.L)return;map=L.map('flightMap',{zoomControl:true}).setView([-26.2,28.0],10);L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap contributors'}).addTo(map);route=L.polyline([],{color:'#146aa2',weight:5}).addTo(map);marker=L.circleMarker([-26.2,28.0],{radius:8,color:'#0a3a58',fillColor:'#1a8aba',fillOpacity:1}).addTo(map);update()}
+function ensureMap(){if(window.L){setupMap();return}if(!document.querySelector('#leafletCSS')){let l=document.createElement('link');l.id='leafletCSS';l.rel='stylesheet';l.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';document.head.appendChild(l)}if(!document.querySelector('#leafletJS')){let s=document.createElement('script');s.id='leafletJS';s.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';s.onload=()=>{setupMap();setTimeout(()=>map?.invalidateSize(),100)};document.head.appendChild(s)}}
+function openTracker(){panel.classList.add('open');ensureMap();setTimeout(()=>map?.invalidateSize(),250);if(db.timer){startWatching();status('Tracking '+db.timer.aircraftName+' • '+db.timer.registration)}else status('Start the Flight Timer first. Tracking will begin with a location-permission request.');update()}
+E('trackExport').onclick=()=>{const last=db.flights?.[db.flights.length-1],p=points().length?points():(last?.track||[]);if(!p.length){alert('No GPS fixes saved yet.');return}const geo={type:'FeatureCollection',features:[{type:'Feature',properties:{aircraft:db.timer?.aircraftName||last?.aircraftName||'',recordedAt:new Date().toISOString()},geometry:{type:'LineString',coordinates:p.map(x=>[x.lon,x.lat])}}]};const url=URL.createObjectURL(new Blob([JSON.stringify(geo,null,2)],{type:'application/geo+json'}));const a=document.createElement('a');a.href=url;a.download='flightcheck-track.geojson';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
+const oldStart=window.startTimer,oldStop=window.stopTimer;
+window.startTimer=function(){oldStart();if(db.timer){db.timer.track=db.timer.track||[];startWatching();save()}};
+window.stopTimer=function(){const running=!!db.timer;oldStop();if(running&&!db.timer){stopWatching();save();update()}};
+document.addEventListener('click',e=>{if(e.target?.closest('#moreNav'))setTimeout(()=>{const parent=E('fcBody');if(parent&&!E('openTrack')){const b=document.createElement('button');b.id='openTrack';b.className='btn alt full';b.textContent='⌖ Live Flight Track';b.onclick=()=>{E('fcOverlay')?.classList.remove('open');openTracker()};parent.appendChild(b)}},0)});
+if(db.timer)startWatching();
+})();
