@@ -172,4 +172,4 @@ $('signOutBtn').onclick=async()=>{if(db.timer){alert('Stop the flight timer befo
 async function init(){show();try{session=JSON.parse(localStorage.getItem(storageKey)||'null')}catch(e){};const hash=new URLSearchParams(location.hash.substring(1));if(hash.has('access_token')){session={access_token:hash.get('access_token'),refresh_token:hash.get('refresh_token'),user:null};history.replaceState(null,'',location.pathname)}if(session){try{if(!session.user?.id){let u=await request('/auth/v1/user');session.user=u}if(await refresh()){await authenticated(session);return} }catch(e){} session=null;localStorage.removeItem(storageKey)}updateMode('login')}
 init();
 })();
-</script><script src="enhancements.js"></script></body></html>
+</script><script src="enhancements.js"></script><script src="flight-tracker.js"></script></body></html>
