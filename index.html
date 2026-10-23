@@ -154,7 +154,7 @@ const headers=()=>({'apikey':key,'Content-Type':'application/json','Authorizatio
 const message=(t,ok=false)=>{$('authMessage').textContent=t;$('authMessage').style.color=ok?'#167342':'#9b3545'};
 function updateMode(next){mode=next;$('authTitle').textContent=next==='signup'?'Create account':next==='reset'?'Set new password':'Sign in';$('passwordLabel').style.display=next==='recover'?'none':'block';$('authPassword').style.display=next==='recover'?'none':'block';$('authPassword').required=next!=='recover';$('authSubmit').textContent=next==='signup'?'Sign up':next==='recover'?'Send reset email':next==='reset'?'Update password':'Sign in';$('authModeBtn').textContent=next==='login'?'Create an account':'Back to sign in';$('forgotBtn').style.display=next==='login'?'block':'none';message('')}
 function show(){hydrating=true;$('authGate').hidden=false;$('accountArea').classList.remove('show')}
-function hide(){hydrating=false;$('authGate').hidden=true;$('accountEmail').textContent=session?.user?.email||'Signed in';$('syncStatus').textContent='Cloud sync enabled'}
+function hide(){hydrating=false;$('authGate').hidden=true;window.fcLoginName=session?.user?.user_metadata?.full_name||session?.user?.email?.split('@')[0]||'pilot';$('accountEmail').textContent=session?.user?.email||'Signed in';$('syncStatus').textContent='Cloud sync enabled'}
 async function request(path,options={}){const res=await fetch(api+path,{...options,headers:{...headers(),...(options.headers||{})}});const body=await res.json().catch(()=>({}));if(!res.ok)throw Error(body.msg||body.error_description||body.message||'Service error '+res.status);return body}
 async function refresh(){if(!session?.refresh_token)return false;try{let s=await request('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:JSON.stringify({refresh_token:session.refresh_token})});session=s;localStorage.setItem(storageKey,JSON.stringify(s));return true}catch(e){return false}}
 async function authed(path,opts){try{return await request(path,opts)}catch(e){if(/401|jwt|token/i.test(e.message)&&await refresh())return request(path,opts);throw e}}
@@ -172,4 +172,4 @@ $('signOutBtn').onclick=async()=>{if(db.timer){alert('Stop the flight timer befo
 async function init(){show();try{session=JSON.parse(localStorage.getItem(storageKey)||'null')}catch(e){};const hash=new URLSearchParams(location.hash.substring(1));if(hash.has('access_token')){session={access_token:hash.get('access_token'),refresh_token:hash.get('refresh_token'),user:null};history.replaceState(null,'',location.pathname)}if(session){try{if(!session.user?.id){let u=await request('/auth/v1/user');session.user=u}if(await refresh()){await authenticated(session);return} }catch(e){} session=null;localStorage.removeItem(storageKey)}updateMode('login')}
 init();
 })();
-</script></body></html>
+</script><script src="enhancements.js"></script></body></html>
